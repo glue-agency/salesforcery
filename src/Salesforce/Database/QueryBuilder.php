@@ -8,48 +8,59 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database;
 
+use Illuminate\Database\Eloquent\RelationNotFoundException;
+use Illuminate\Support\Str;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
+use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 
 class QueryBuilder
 {
+
     /**
      * @var Client
      */
     public $connection;
+
     /**
      * Parsed where statements, ready for normalization to query language
      *
      * @var array
      */
     public $wheres = [];
+
     /**
      * Table we are querying
      *
      * @var string
      */
     public $from = '';
+
     /**
      * Ordering for query
      *
      * @var array
      */
     public $orders = [];
+
     /**
      * The maximum number of records to return.
      *
      * @var int
      */
     public $limit;
+
     /**
      * The number of records to skip.
      *
      * @var int
      */
     public $offset;
+
     /**
      * @var Model
      */
     public $model;
+
     /**
      * The columns that should be returned.
      *
@@ -57,6 +68,18 @@ class QueryBuilder
      */
     public $columns = [];
 
+    /**
+     * The relations that should be eager loaded.
+     *
+     * @var array
+     */
+    protected $eagerLoad = [];
+
+    /**
+     * QueryBuilder constructor.
+     *
+     * @param Client $connection
+     */
     public function __construct(Client $connection)
     {
         $this->connection = $connection;
@@ -67,9 +90,21 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function setModel(Model $model)
+    public function setModel(Model $model): self
     {
         $this->model = $model;
+
+        return $this;
+    }
+
+    /**
+     * @param $relations
+     *
+     * @return $this
+     */
+    public function with($relations): self
+    {
+        $this->eagerLoad = array_merge($this->eagerLoad, $relations);
 
         return $this;
     }
@@ -83,13 +118,13 @@ class QueryBuilder
      */
     public function where($field, $operator = null, $value = null)
     {
-        if (is_array($field)) {
+        if(is_array($field)) {
             return $this->addArrayOfWheres($field);
         }
 
         // assumed = operator for 2 args
-        if (func_num_args() == 2) {
-            list($operator, $value) = array('=', $operator);
+        if(func_num_args() == 2) {
+            [$operator, $value] = ['=', $operator];
         }
 
         $this->wheres[] = [$field, $operator, $value];
@@ -100,15 +135,15 @@ class QueryBuilder
     /**
      * Add an array of where clauses to the query.
      *
-     * @param  array $wheres
+     * @param array $wheres
      *
      * @return $this
      */
     protected function addArrayOfWheres($wheres)
     {
 
-        foreach ($wheres as $key => $value) {
-            if (is_numeric($key) && is_array($value)) {
+        foreach($wheres as $key => $value) {
+            if(is_numeric($key) && is_array($value)) {
                 $this->where(...array_values($value));
             } else {
                 $this->where($key, '=', $value);
@@ -121,9 +156,9 @@ class QueryBuilder
     /**
      * Add a "where in" clause to the query.
      *
-     * @param  string $column
-     * @param  array  $values
-     * @param  bool   $not
+     * @param string $column
+     * @param array  $values
+     * @param bool   $not
      *
      * @return $this
      */
@@ -137,7 +172,7 @@ class QueryBuilder
     /**
      * Alias to set the "offset" value of the query.
      *
-     * @param  int $value
+     * @param int $value
      *
      * @return QueryBuilder
      */
@@ -149,7 +184,7 @@ class QueryBuilder
     /**
      * Set the "offset" value of the query.
      *
-     * @param  int $value
+     * @param int $value
      *
      * @return $this
      */
@@ -163,7 +198,7 @@ class QueryBuilder
     /**
      * Set the "limit" value of the query.
      *
-     * @param  int $value
+     * @param int $value
      *
      * @return $this
      */
@@ -198,17 +233,17 @@ class QueryBuilder
 
         // where
         $sqlWheres = [];
-        $where     = '';
-        foreach ($this->wheres as $where) {
+        $where = '';
+        foreach($this->wheres as $where) {
             $sqlWheres[] = $where[0] . ' ' . $this->operatorAndValueToSql($where[0], $where[1], $where[2]);
         }
-        if ($sqlWheres) {
+        if($sqlWheres) {
             $where = 'WHERE ' . implode(' AND ', $sqlWheres); // @todo assume AND for now...
         }
 
         // limit
         $limit = '';
-        if ($this->limit) {
+        if($this->limit) {
             $limit = "LIMIT " . (int) $this->limit;
         }
 
@@ -237,7 +272,7 @@ class QueryBuilder
 
         $schema = $model::getSchema();
 
-        switch ($schema[$column]['type']) {
+        switch($schema[$column]['type']) {
             case 'boolean':
                 return $operator . " " . (($value) ? 'TRUE' : 'FALSE');
             case 'datetime':
@@ -246,7 +281,38 @@ class QueryBuilder
                 return $operator . " " . date('Y-m-d', strtotime($value));
         }
 
+        if(is_array($value)) {
+            $sql = $operator . " (";
+
+            foreach($value as $item) {
+                $sql .= " '" . addslashes($item) . "',";
+            }
+
+            $sql = rtrim($sql, ',');
+            $sql .= ")";
+
+            return $sql;
+        }
+
         return $operator . " '" . addslashes($value) . "'";
+    }
+
+    /**
+     * Execute the query as a "select" statement with limit 1 and hydrate the model.
+     *
+     * @return Model
+     */
+    public function first(): Model
+    {
+        $this->limit = 1;
+
+        $data = $this->get();
+
+        if($data->offsetExists(0)) {
+            return $data[0];
+        }
+
+        return $this->model::hydrateFactory([]);
     }
 
     /**
@@ -259,9 +325,13 @@ class QueryBuilder
         $model = $this->model;
 
         $results =
-            array_map(function ($result) use ($model) {
-            return $model::hydrateFactory($result);
-        }, $this->runSelect());
+            array_map(function($result) use ($model) {
+                return $model::hydrateFactory($result);
+            }, $this->runSelect());
+
+        if(count($results) > 0) {
+            $results = $this->eagerLoadRelations($results);
+        }
 
         return new Collection($results);
     }
@@ -273,8 +343,8 @@ class QueryBuilder
      */
     public function isQueryAll()
     {
-        foreach ($this->wheres as $where) {
-            switch ($where[0]) {
+        foreach($this->wheres as $where) {
+            switch($where[0]) {
                 case 'IsArchived':
                 case 'IsDeleted':
                     return true;
@@ -291,7 +361,7 @@ class QueryBuilder
      */
     protected function runSelect()
     {
-        if ($this->isQueryAll()) {
+        if($this->isQueryAll()) {
             $response = $this->connection->queryAll(
                 $this->toSql()
             );
@@ -304,10 +374,10 @@ class QueryBuilder
         $records = $response['records'];
 
         // iterate to get all results
-        while (!$response['done']) {
+        while(! $response['done']) {
             $response = $this->connection->request('GET', $this->connection->authentication->getInstanceUrl() . $response['nextRecordsUrl']);
             $response = json_decode($response->getBody(), true);
-            $records  = array_merge($records, $response['records']);
+            $records = array_merge($records, $response['records']);
         }
 
         return $records;
@@ -316,14 +386,16 @@ class QueryBuilder
     /**
      * @param          $batchSize
      * @param callable $closure
-     * @todo $batchSize - not sure how to get this to work with the REST API. Specifying LIMIT will stop further pagination, and the batch header didn't seem to work.... leaving the param here for now
+     *
      * @return bool
+     * @todo $batchSize - not sure how to get this to work with the REST API. Specifying LIMIT will stop further
+     *       pagination, and the batch header didn't seem to work.... leaving the param here for now
      */
     public function chunk($batchSize, callable $closure)
     {
         $model = $this->model;
 
-        if ($this->isQueryAll()) {
+        if($this->isQueryAll()) {
             $response = $this->connection->queryAll(
                 $this->toSql()
             );
@@ -336,24 +408,120 @@ class QueryBuilder
         // first batch...
         $records = $response['records'];
         $results =
-            array_map(function ($result) use ($model) {
-            return $model::hydrateFactory($result);
-        }, $records);
+            array_map(function($result) use ($model) {
+                return $model::hydrateFactory($result);
+            }, $records);
         $closure(new Collection($results));
 
         // iterate to get any remaining batches
-        while (!empty($response['nextRecordsUrl'])) {
+        while(! empty($response['nextRecordsUrl'])) {
             $response = $this->connection->request('GET', $this->connection->authentication->getInstanceUrl() . $response['nextRecordsUrl']);
             $response = json_decode($response->getBody(), true);
-            $results  =
-                array_map(function ($result) use ($model) {
-                return $model::hydrateFactory($result);
-            }, $response['records']);
+            $results =
+                array_map(function($result) use ($model) {
+                    return $model::hydrateFactory($result);
+                }, $response['records']);
 
             $closure(new Collection($results));
         }
 
         return true;
+    }
+
+    /**
+     * Eager loads relations on the models.
+     *
+     * @param array $models
+     *
+     * @return array
+     */
+    public function eagerLoadRelations(array $models): array
+    {
+        foreach($this->eagerLoad as $name) {
+            if(strpos($name, '.') === false) {
+                $models = $this->eagerLoadRelation($models, $name);
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * Eager load a single relation on the models.
+     *
+     * @param array $models
+     * @param       $name
+     *
+     * @return array
+     */
+    public function eagerLoadRelation(array $models, $name): array
+    {
+        $relation = $this->getRelation($name);
+
+        $relation->addEagerConstraints($models);
+
+        return $relation->match(
+            $relation->initRelation($models, $name),
+            $relation->getEagerResults(),
+            $name,
+        );
+    }
+
+    /**
+     * Get a relation object by name.
+     *
+     * @param $name
+     *
+     * @return Relation
+     */
+    public function getRelation($name): Relation
+    {
+        try {
+            $relation = $this->model->newInstance()->$name();
+            $relation->withoutDefaultConstraint();
+
+            $nested = $this->relationsNestedUnder($name);
+            if(count($nested) > 0) {
+                $relation->getQueryBuilder()->with($nested);
+            }
+
+            return $relation;
+        } catch(\BadMethodCallException $e) {
+            throw RelationNotFoundException::make($this->model, $name);
+        }
+    }
+
+    /**
+     * Get the deeply nested relations for a given top-level relation.
+     *
+     * @param $relation
+     *
+     * @return array
+     */
+    protected function relationsNestedUnder($relation): array
+    {
+        $nested = [];
+
+        foreach($this->eagerLoad as $name) {
+            if($this->isNestedUnder($relation, $name)) {
+                $nested[] = Str::after($name, "{$relation}.");
+            }
+        }
+
+        return $nested;
+    }
+
+    /**
+     * Determine if the relationship is nested.
+     *
+     * @param $relation
+     * @param $name
+     *
+     * @return bool
+     */
+    protected function isNestedUnder($relation, $name): bool
+    {
+        return Str::contains($name, '.') && Str::startsWith($name, "{$relation}.");
     }
 
     /**
@@ -379,8 +547,8 @@ class QueryBuilder
     /**
      * Add an "order by" clause to the query.
      *
-     * @param  string $column
-     * @param  string $direction
+     * @param string $column
+     * @param string $direction
      *
      * @return $this
      */
@@ -397,16 +565,16 @@ class QueryBuilder
     /**
      * Add a "where date" statement to the query.
      *
-     * @param  string $column
-     * @param  string $operator
-     * @param  mixed  $value
-     * @param  string $boolean
+     * @param string $column
+     * @param string $operator
+     * @param mixed  $value
+     * @param string $boolean
      *
      * @return  QueryBuilder|static
      */
     public function whereDate($column, $operator, $value = null, $boolean = 'and')
     {
-        list($value, $operator) = $this->prepareValueAndOperator(
+        [$value, $operator] = $this->prepareValueAndOperator(
             $value, $operator, func_num_args() == 2
         );
 
@@ -416,16 +584,16 @@ class QueryBuilder
     /**
      * Add a where between statement to the query.
      *
-     * @param  string $column
-     * @param  array  $values
-     * @param  string $boolean
-     * @param  bool   $not
+     * @param string $column
+     * @param array  $values
+     * @param string $boolean
+     * @param bool   $not
      *
      * @return $this
      */
     public function whereBetween($column, array $values, $boolean = 'and', $not = false)
     {
-        $type           = 'between';
+        $type = 'between';
         $this->wheres[] = compact('column', 'type', 'boolean', 'not');
         $this->addBinding($values, 'where');
 
@@ -435,14 +603,14 @@ class QueryBuilder
     /**
      * Add a "where null" clause to the query.
      *
-     * @param  string $column
-     * @param  bool   $not
+     * @param string $column
+     * @param bool   $not
      *
      * @return $this
      */
     public function whereNull($column, $not = false)
     {
-        $type           = $not ? 'NotNull' : 'Null';
+        $type = $not ? 'NotNull' : 'Null';
         $this->wheres[] = [$column, '=', $type];
 
         return $this;
@@ -451,7 +619,7 @@ class QueryBuilder
     /**
      * Set the columns to be selected.
      *
-     * @param  array|mixed $columns
+     * @param array|mixed $columns
      *
      * @return $this
      */
@@ -465,13 +633,13 @@ class QueryBuilder
     /**
      * Add a new select column to the query.
      *
-     * @param  array|mixed $column
+     * @param array|mixed $column
      *
      * @return $this
      */
     public function addSelect($column)
     {
-        $column        = is_array($column) ? $column : func_get_args();
+        $column = is_array($column) ? $column : func_get_args();
         $this->columns = array_merge((array) $this->columns, $column);
 
         return $this;
@@ -480,7 +648,7 @@ class QueryBuilder
     /**
      * Set the table which the query is targeting.
      *
-     * @param  string $table
+     * @param string $table
      *
      * @return $this
      */
@@ -490,5 +658,4 @@ class QueryBuilder
 
         return $this;
     }
-
 }

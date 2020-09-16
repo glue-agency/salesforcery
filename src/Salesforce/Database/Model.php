@@ -1,26 +1,35 @@
 <?php
+
 namespace Stratease\Salesforcery\Salesforce\Database;
 
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
+use Stratease\Salesforcery\Salesforce\Database\Concerns\HasRelations;
 
 abstract class Model
 {
+
+    use HasRelations;
+
     /**
      * @var Client Our REST client library
      */
     protected static $connection;
+
     /**
      * @var string Salesforce object 'name'
      */
     public static $resourceName;
+
     /**
      * @var string
      */
     public $primaryKey = 'Id';
+
     /**
      * @var array The field => value for this model
      */
     protected $attributes = [];
+
     /**
      * @var array Fields that have changed since model hydration with their previous values, field => prevValue
      */
@@ -53,12 +62,11 @@ abstract class Model
     public static function hydrateFactory($data)
     {
         $instanceName = static::class;
-        $instance     = new $instanceName();
+        $instance = new $instanceName();
         $instance->hydrate($data);
 
         return $instance;
     }
-
 
     /**
      * @param $field
@@ -75,12 +83,27 @@ abstract class Model
         return $query->get();
     }
 
+    /**
+     * @return mixed
+     */
+    public static function first() {
+        return (new static)->newQuery()->first();
+    }
+
+    /**
+     * @return Collection
+     */
+    public static function all()
+    {
+        return (new static)->newQuery()->get();
+    }
 
     /**
      * Handle dynamic static method calls into the method.
      *
-     * @param  string  $method
-     * @param  array  $parameters
+     * @param string $method
+     * @param array  $parameters
+     *
      * @return mixed
      */
     public static function __callStatic($method, $parameters)
@@ -98,6 +121,13 @@ abstract class Model
         return $this->toJson();
     }
 
+    public static function with($relations): QueryBuilder
+    {
+        $relations = is_array($relations) ? $relations : func_get_args();
+
+        return (new static)->newQuery()->with($relations);
+    }
+
     /**
      * @return QueryBuilder
      */
@@ -106,6 +136,15 @@ abstract class Model
         return (new QueryBuilder(self::$connection))
             ->from(static::resolveObjectName())
             ->select(array_keys(static::getSchema()))->setModel($this);
+    }
+
+    public function newInstance($attributes = [])
+    {
+        $model = new static((array) $attributes);
+
+        $model->registerConnection(self::$connection);
+
+        return $model;
     }
 
     /**
@@ -131,6 +170,7 @@ abstract class Model
     public static function getSchema()
     {
         SchemaInspector::registerConnection(self::$connection);
+
         return SchemaInspector::getSchema(self::resolveObjectName());
     }
 
@@ -143,7 +183,7 @@ abstract class Model
     {
         $schema = self::getSchema();
 
-        foreach ($schema as $field => $dataType) {
+        foreach($schema as $field => $dataType) {
             $this->hydrateField($field, isset($data[$field]) ? $data[$field] : null);
         }
 
@@ -155,7 +195,7 @@ abstract class Model
      */
     public static function resolveObjectName()
     {
-        if (static::$resourceName) {
+        if(static::$resourceName) {
 
             return static::$resourceName;
         }
@@ -171,8 +211,8 @@ abstract class Model
     public function update()
     {
         $primaryKey = $this->primaryKey;
-        if ($this->$primaryKey) {
-            if (self::$connection->update(self::resolveObjectName(),
+        if($this->$primaryKey) {
+            if(self::$connection->update(self::resolveObjectName(),
                 $this->$primaryKey,
                 $this->getChanges())) {
 
@@ -190,7 +230,7 @@ abstract class Model
      */
     public function insert()
     {
-        if ($id = self::$connection->create(self::resolveObjectName(),
+        if($id = self::$connection->create(self::resolveObjectName(),
             $this->getChanges())) {
             $this->hydrateField($this->primaryKey, $id);
             $this->discardChanges();
@@ -274,7 +314,7 @@ abstract class Model
     {
         $setter = 'set' . $field;
         // do change operation
-        if (self::isValidField($field)) {
+        if(self::isValidField($field)) {
             $this->fireChange($field, $this->$field);
         }
 
@@ -288,6 +328,10 @@ abstract class Model
      */
     public function __get($field)
     {
+        if(method_exists($this, $field)) {
+            return $this->getRelationValue($field);
+        }
+
         $getter = 'get' . $field;
 
         return $this->$getter();
@@ -302,16 +346,22 @@ abstract class Model
     public function __call($name, $arguments)
     {
         // getter?
-        if (substr($name, 0, 3) === 'get') {
+        if(substr($name, 0, 3) === 'get') {
             $field = substr($name, 3);
-            if (self::isValidField($field)) {
-                return $this->attributes[$field] ?: null;
+
+            if(self::isValidField($field)) {
+                return isset($this->attributes[$field]) ? $this->attributes[$field] : null;
             }
-            trigger_error("Invalid field: " . self::resolveObjectName() . "->" . $field . " being accessed.", E_USER_WARNING);
+
+            trigger_error(sprintf("Invalid field: %s->%s being accessed. Available fields are: %s.",
+                self::resolveObjectName(),
+                $field,
+                implode(', ', array_keys(self::getSchema()))
+            ), E_USER_WARNING);
         }
 
         // setter?
-        if (substr($name, 0, 3) === 'set') {
+        if(substr($name, 0, 3) === 'set') {
             $field = substr($name, 3);
             $this->fireChange($field, $this->attributes[$field] ?: null);
             $this->attributes[$field] = $arguments[0]; // @todo datatypeing?
@@ -319,7 +369,7 @@ abstract class Model
             return $this;
         }
 
-        if (in_array($name, ['increment', 'decrement'])) {
+        if(in_array($name, ['increment', 'decrement'])) {
             return $this->$name(...$arguments);
         }
 
@@ -348,7 +398,7 @@ abstract class Model
     {
         $primaryKey = $this->primaryKey;
 
-        if (!$this->$primaryKey) {
+        if(! $this->$primaryKey) {
             // do insert
             return $this->insert();
         }
