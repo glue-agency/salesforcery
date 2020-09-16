@@ -4,7 +4,7 @@ namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\QueryBuilder;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 
 class BelongsTo extends Relation
 {
@@ -19,7 +19,7 @@ class BelongsTo extends Relation
      */
     protected $ownerKey;
 
-    public function __construct(QueryBuilder $query, Model $child, string $foreignKey, string $ownerKey)
+    public function __construct(Builder $query, Model $child, string $foreignKey, string $ownerKey)
     {
         $this->ownerKey = $ownerKey;
 

@@ -4,13 +4,13 @@ namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\QueryBuilder;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 
 abstract class Relation
 {
 
     /**
-     * @var QueryBuilder
+     * @var Builder
      */
     protected $query;
 
@@ -29,7 +29,7 @@ abstract class Relation
      */
     protected $related;
 
-    public function __construct(QueryBuilder $query, Model $parent, string $foreignKey)
+    public function __construct(Builder $query, Model $parent, string $foreignKey)
     {
         $this->query = $query;
         $this->parent = $parent;
@@ -60,7 +60,7 @@ abstract class Relation
         unset($this->query->wheres[0]);
     }
 
-    public function getQueryBuilder(): QueryBuilder
+    public function getQueryBuilder(): Builder
     {
         return $this->query;
     }

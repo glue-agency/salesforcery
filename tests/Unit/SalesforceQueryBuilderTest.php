@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Authentication\PasswordAuthentication;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\QueryBuilder;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Tests\Account;
 
 class SalesforceQueryBuilderTest extends TestCase
@@ -43,7 +43,7 @@ class SalesforceQueryBuilderTest extends TestCase
      */
     public function build_simple_where()
     {
-        $builder = new QueryBuilder(self::$client);
+        $builder = new Builder(self::$client);
         $builder->setModel(new Account());
         $sql = $builder->where('Name', 'Frank')
             ->select('Name')
@@ -58,7 +58,7 @@ class SalesforceQueryBuilderTest extends TestCase
      */
     public function build_where_with_array()
     {
-        $builder = new QueryBuilder(self::$client);
+        $builder = new Builder(self::$client);
         $builder->setModel(new Account());
         $sql = $builder->where(['Name' => 'Frank',
             'Email'                        => 'frank@test.com'])
@@ -74,7 +74,7 @@ class SalesforceQueryBuilderTest extends TestCase
      */
     public function build_where_with_operators()
     {
-        $builder = new QueryBuilder(self::$client);
+        $builder = new Builder(self::$client);
         $builder->setModel(new Account());
         $sql = $builder->where('Name', '!=', 'Frank')
             ->where('Email', '>', 'frank@test.com')

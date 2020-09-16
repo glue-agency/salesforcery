@@ -121,7 +121,7 @@ abstract class Model
         return $this->toJson();
     }
 
-    public static function with($relations): QueryBuilder
+    public static function with($relations): Builder
     {
         $relations = is_array($relations) ? $relations : func_get_args();
 
@@ -129,11 +129,11 @@ abstract class Model
     }
 
     /**
-     * @return QueryBuilder
+     * @return Builder
      */
     public function newQuery()
     {
-        return (new QueryBuilder(self::$connection))
+        return (new Builder(self::$connection))
             ->from(static::resolveObjectName())
             ->select(array_keys(static::getSchema()))->setModel($this);
     }

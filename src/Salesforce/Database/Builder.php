@@ -8,18 +8,22 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database;
 
+use Illuminate\Database\Eloquent\Concerns\QueriesRelationships;
 use Illuminate\Database\Eloquent\RelationNotFoundException;
 use Illuminate\Support\Str;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
 use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 
-class QueryBuilder
+class Builder
 {
+    use QueriesRelationships;
 
     /**
      * @var Client
      */
     public $connection;
+
+    protected $query;
 
     /**
      * Parsed where statements, ready for normalization to query language
@@ -174,7 +178,7 @@ class QueryBuilder
      *
      * @param int $value
      *
-     * @return QueryBuilder
+     * @return Builder
      */
     public function skip($value)
     {
@@ -537,7 +541,7 @@ class QueryBuilder
     /**
      * Get a new instance of the query builder.
      *
-     * @return QueryBuilder
+     * @return Builder
      */
     public function newQuery()
     {
@@ -570,7 +574,7 @@ class QueryBuilder
      * @param mixed  $value
      * @param string $boolean
      *
-     * @return  QueryBuilder|static
+     * @return  Builder|static
      */
     public function whereDate($column, $operator, $value = null, $boolean = 'and')
     {

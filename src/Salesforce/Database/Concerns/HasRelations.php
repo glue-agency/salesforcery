@@ -2,10 +2,10 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Concerns;
 
-
 use LogicException;
+use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\QueryBuilder;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Relations\BelongsTo;
 use Stratease\Salesforcery\Salesforce\Database\Relations\HasMany;
 use Stratease\Salesforcery\Salesforce\Database\Relations\HasOne;
@@ -13,6 +13,7 @@ use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 
 trait HasRelations
 {
+    use ForwardsCalls;
 
     protected $relations = [];
 
@@ -51,17 +52,17 @@ trait HasRelations
         );
     }
 
-    protected function newHasONe(QueryBuilder $query, Model $parent, $foreignKey)
+    protected function newHasONe(Builder $query, Model $parent, $foreignKey)
     {
         return new HasOne($query, $parent, $foreignKey);
     }
 
-    protected function newBelongsTo(QueryBuilder $query, Model $child, $foreignKey, $ownerKey)
+    protected function newBelongsTo(Builder $query, Model $child, $foreignKey, $ownerKey)
     {
         return new BelongsTo($query, $child, $foreignKey, $ownerKey);
     }
 
-    protected function newHasMany(QueryBuilder $query, Model $parent, $foreignKey)
+    protected function newHasMany(Builder $query, Model $parent, $foreignKey)
     {
         return new HasMany($query, $parent, $foreignKey);
     }
