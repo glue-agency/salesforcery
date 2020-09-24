@@ -5,16 +5,20 @@ namespace Stratease\Salesforcery\Salesforce\Connection\REST;
 use GuzzleHttp\Client as GuzzleClient;
 
 use GuzzleHttp\Exception\ClientException;
+use Stratease\Salesforcery\Salesforce\Connection\Connection;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Authentication\AuthenticationInterface;
+use Stratease\Salesforcery\Salesforce\Query\Grammar\ObjectQueryLanguageGrammar;
 
-class Client
+class Client extends Connection
 {
     public $authentication;
     public $apiVersion;
+
     public function __construct(AuthenticationInterface $authentication, $apiVersion = '39.0')
     {
         $this->authentication = $authentication;
         $this->apiVersion = $apiVersion;
+        $this->queryGrammar = new ObjectQueryLanguageGrammar;
     }
 
     public function queryAll($query, array $headers = [])

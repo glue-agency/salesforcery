@@ -19,7 +19,7 @@ class BelongsTo extends Relation
      */
     protected $ownerKey;
 
-    public function __construct(Builder $query, Model $child, string $foreignKey, string $ownerKey)
+    public function __construct(Builder $builder, Model $child, string $foreignKey, string $ownerKey)
     {
         $this->ownerKey = $ownerKey;
 
@@ -28,7 +28,7 @@ class BelongsTo extends Relation
         // one is we will create a "child" variable for much better readability.
         $this->child = $child;
 
-        parent::__construct($query, $child, $foreignKey);
+        parent::__construct($builder, $child, $foreignKey);
     }
 
     public function getResults()
@@ -37,22 +37,22 @@ class BelongsTo extends Relation
             return;
         }
 
-        return $this->query->first();
+        return $this->builder->first();
     }
 
     public function addConstraints(): void
     {
-        $this->query->where($this->ownerKey, '=', $this->child->{$this->foreignKey});
+        $this->builder->where($this->ownerKey, '=', $this->child->{$this->foreignKey});
     }
 
     public function getEagerResults()
     {
-        return $this->query->get();
+        return $this->builder->get();
     }
 
     public function addEagerConstraints(array $models): void
     {
-        $this->query->whereIn(
+        $this->builder->whereIn(
             $this->ownerKey, $this->getKeys($models, $this->foreignKey)
         );
     }

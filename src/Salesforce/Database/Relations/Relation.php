@@ -12,7 +12,7 @@ abstract class Relation
     /**
      * @var Builder
      */
-    protected $query;
+    protected $builder;
 
     /**
      * @var Model
@@ -29,13 +29,13 @@ abstract class Relation
      */
     protected $related;
 
-    public function __construct(Builder $query, Model $parent, string $foreignKey)
+    public function __construct(Builder $builder, Model $parent, string $foreignKey)
     {
-        $this->query = $query;
+        $this->builder = $builder;
         $this->parent = $parent;
         $this->foreignKey = $foreignKey;
 
-        $this->related = $query->model;
+        $this->related = $builder->model;
 
         $this->addConstraints();
     }
@@ -57,11 +57,11 @@ abstract class Relation
 
     public function withoutDefaultConstraint(): void
     {
-        unset($this->query->wheres[0]);
+        unset($this->builder->query->wheres[0]);
     }
 
     public function getQueryBuilder(): Builder
     {
-        return $this->query;
+        return $this->builder;
     }
 }

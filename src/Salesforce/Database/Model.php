@@ -133,9 +133,10 @@ abstract class Model
      */
     public function newQuery()
     {
-        return (new Builder(self::$connection))
+        return (new Builder(self::$connection->getQueryBuilder()))
+            ->select(array_keys(static::getSchema()))
             ->from(static::resolveObjectName())
-            ->select(array_keys(static::getSchema()))->setModel($this);
+            ->setModel($this);
     }
 
     public function newInstance($attributes = [])

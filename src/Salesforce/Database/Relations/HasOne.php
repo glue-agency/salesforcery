@@ -15,17 +15,17 @@ class HasOne extends HasOneOrMany
             return;
         }
 
-        return $this->query->first();
+        return $this->builder->first();
     }
 
     public function addConstraints(): void
     {
-        $this->query->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
+        $this->builder->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
     }
 
     public function getEagerResults()
     {
-        return $this->query->get();
+        return $this->builder->get();
     }
 
     public function initRelation(array $models, $relation)

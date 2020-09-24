@@ -9,12 +9,12 @@ class HasMany extends HasOneOrMany
 
     public function getResults()
     {
-        return $this->query->get();
+        return $this->builder->get();
     }
 
     public function addConstraints(): void
     {
-        $this->query->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
+        $this->builder->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
     }
 
     public function initRelation(array $models, $relation)
