@@ -327,6 +327,9 @@ class Builder
      */
     public function toSql(): string
     {
-        return $this->grammar->compileSelect($this);
+        $sql = $this->grammar->compileSelect($this);
+        Log::channel('query')->debug($sql);
+
+        return $sql;
     }
 }

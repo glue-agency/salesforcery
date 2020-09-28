@@ -8,6 +8,7 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database;
 
+use Closure;
 use Illuminate\Database\Eloquent\Concerns\QueriesRelationships;
 use Illuminate\Database\Eloquent\RelationNotFoundException;
 use Illuminate\Support\Str;
@@ -79,7 +80,9 @@ class Builder
      */
     public function with($relations): self
     {
-        $this->eagerLoad = array_merge($this->eagerLoad, $relations);
+        $eagerLoad = $this->parseWithRelations(is_string($relations) ? func_get_args() : $relations);
+
+        $this->eagerLoad = array_merge($this->eagerLoad, $eagerLoad);
 
         return $this;
     }
@@ -205,9 +208,9 @@ class Builder
      */
     public function eagerLoadRelations(array $models): array
     {
-        foreach($this->eagerLoad as $name) {
+        foreach($this->eagerLoad as $name => $constraints) {
             if(strpos($name, '.') === false) {
-                $models = $this->eagerLoadRelation($models, $name);
+                $models = $this->eagerLoadRelation($models, $name, $constraints);
             }
         }
 
@@ -222,11 +225,13 @@ class Builder
      *
      * @return array
      */
-    public function eagerLoadRelation(array $models, $name): array
+    public function eagerLoadRelation(array $models, $name, Closure $constraints): array
     {
         $relation = $this->getRelation($name);
 
         $relation->addEagerConstraints($models);
+
+        $constraints($relation);
 
         return $relation->match(
             $relation->initRelation($models, $name),
@@ -270,9 +275,9 @@ class Builder
     {
         $nested = [];
 
-        foreach($this->eagerLoad as $name) {
+        foreach($this->eagerLoad as $name => $constraints) {
             if($this->isNestedUnder($relation, $name)) {
-                $nested[] = Str::after($name, "{$relation}.");
+                $nested[Str::after($name, "{$relation}.")] = $constraints;
             }
         }
 
@@ -290,6 +295,55 @@ class Builder
     protected function isNestedUnder($relation, $name): bool
     {
         return Str::contains($name, '.') && Str::startsWith($name, "{$relation}.");
+    }
+
+    protected function parseWithRelations(array $relations)
+    {
+        $results = [];
+
+        foreach($relations as $name => $constraints) {
+            // If the "name" value is a numeric key, we can assume that no constraints
+            // have been specified. We will just put an empty Closure there so that
+            // we can treat these all the same while we are looping through them.
+            if(is_numeric($name)) {
+                $name = $constraints;
+
+                [$name, $constraints] = [
+                    $name, static function() {
+                        //
+                    },
+                ];
+            }
+
+            // We need to separate out any nested includes, which allows the developers
+            // to load deep relationships using "dots" without stating each level of
+            // the relationship with its own key in the array of eager-load names.
+            $results = $this->addNestedWiths($name, $results);
+
+            $results[$name] = $constraints;
+        }
+
+        return $results;
+    }
+
+    protected function addNestedWiths($name, $results)
+    {
+        $progress = [];
+
+        // If the relation has already been set on the result array, we will not set it
+        // again, since that would override any constraints that were already placed
+        // on the relationships. We will only set the ones that are not specified.
+        foreach(explode('.', $name) as $segment) {
+            $progress[] = $segment;
+
+            if(! isset($results[$last = implode('.', $progress)])) {
+                $results[$last] = static function() {
+                    //
+                };
+            }
+        }
+
+        return $results;
     }
 
     /**

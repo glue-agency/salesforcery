@@ -2,12 +2,14 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
 use Stratease\Salesforcery\Salesforce\Database\Builder;
 
 abstract class Relation
 {
+    use ForwardsCalls;
 
     /**
      * @var Builder
@@ -64,4 +66,16 @@ abstract class Relation
     {
         return $this->builder;
     }
+
+    public function __call($method, $parameters)
+    {
+        $result = $this->forwardCallTo($this->builder, $method, $parameters);
+
+        if($result === $this->builder) {
+            return $this;
+        }
+
+        return $result;
+    }
+
 }
