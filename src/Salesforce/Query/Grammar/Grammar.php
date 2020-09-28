@@ -54,6 +54,11 @@ class Grammar
         })->all();
     }
 
+    protected function whereBasic(Builder $query, $where): string
+    {
+        return "{$where['field']} {$where['operator']} {$this->wrap($where['value'])}";
+    }
+
     protected function whereIn(Builder $query, $where): string
     {
         $stringifiedValues = implode(', ', $this->wrap($where['values']));
