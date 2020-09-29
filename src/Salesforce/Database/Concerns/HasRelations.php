@@ -2,10 +2,10 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Concerns;
 
-use LogicException;
 use Illuminate\Support\Traits\ForwardsCalls;
-use Stratease\Salesforcery\Salesforce\Database\Model;
+use LogicException;
 use Stratease\Salesforcery\Salesforce\Database\Builder;
+use Stratease\Salesforcery\Salesforce\Database\Model;
 use Stratease\Salesforcery\Salesforce\Database\Relations\BelongsTo;
 use Stratease\Salesforcery\Salesforce\Database\Relations\HasMany;
 use Stratease\Salesforcery\Salesforce\Database\Relations\HasOne;
@@ -13,18 +13,20 @@ use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 
 trait HasRelations
 {
+
     use ForwardsCalls;
 
     protected $relations = [];
 
-    public function hasOne($related, $foreignKey = null)
+    public function hasOne($related, $foreignKey = null, $localKey = null)
     {
         $instance = $this->newRelatedInstance($related);
 
         $foreignKey = $foreignKey ?: $this->resolveObjectName();
+        $localKey = $localKey ?: $this->primaryKey;
 
         return $this->newHasOne(
-            $instance->newQuery(), $this, $foreignKey
+            $instance->newQuery(), $this, $foreignKey, $localKey
         );
     }
 
@@ -33,7 +35,6 @@ trait HasRelations
         $instance = $this->newRelatedInstance($related);
 
         $foreignKey = $foreignKey ?: $instance->resolveObjectName();
-
         $ownerKey = $ownerKey ?: $instance->primaryKey;
 
         return $this->newBelongsTo(
@@ -41,20 +42,21 @@ trait HasRelations
         );
     }
 
-    public function hasMany($related, $foreignKey = null)
+    public function hasMany($related, $foreignKey = null, $localKey = null)
     {
         $instance = $this->newRelatedInstance($related);
 
         $foreignKey = $foreignKey ?: $this->resolveObjectName();
+        $localKey = $localKey ?: $this->primaryKey;
 
         return $this->newHasMany(
-            $instance->newQuery(), $this, $foreignKey
+            $instance->newQuery(), $this, $foreignKey, $localKey
         );
     }
 
-    protected function newHasONe(Builder $query, Model $parent, $foreignKey)
+    protected function newHasONe(Builder $query, Model $parent, $foreignKey, $localKey)
     {
-        return new HasOne($query, $parent, $foreignKey);
+        return new HasOne($query, $parent, $foreignKey, $localKey);
     }
 
     protected function newBelongsTo(Builder $query, Model $child, $foreignKey, $ownerKey)
@@ -62,9 +64,9 @@ trait HasRelations
         return new BelongsTo($query, $child, $foreignKey, $ownerKey);
     }
 
-    protected function newHasMany(Builder $query, Model $parent, $foreignKey)
+    protected function newHasMany(Builder $query, Model $parent, $foreignKey, $localKey)
     {
-        return new HasMany($query, $parent, $foreignKey);
+        return new HasMany($query, $parent, $foreignKey, $localKey);
     }
 
     protected function newRelatedInstance($class)

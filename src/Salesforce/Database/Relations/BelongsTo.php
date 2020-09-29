@@ -15,12 +15,18 @@ class BelongsTo extends Relation
     protected $child;
 
     /**
+     * @var string $foreignKey
+     */
+    protected $foreignKey;
+
+    /**
      * @var string
      */
     protected $ownerKey;
 
     public function __construct(Builder $builder, Model $child, string $foreignKey, string $ownerKey)
     {
+        $this->foreignKey = $foreignKey;
         $this->ownerKey = $ownerKey;
 
         // In the underlying base relationship class, this variable is referred to as
@@ -28,7 +34,7 @@ class BelongsTo extends Relation
         // one is we will create a "child" variable for much better readability.
         $this->child = $child;
 
-        parent::__construct($builder, $child, $foreignKey);
+        parent::__construct($builder, $child);
     }
 
     public function getResults()

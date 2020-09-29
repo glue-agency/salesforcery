@@ -14,7 +14,7 @@ class HasMany extends HasOneOrMany
 
     public function addConstraints(): void
     {
-        $this->builder->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
+        $this->builder->where($this->foreignKey, $this->parent->{$this->localKey});
     }
 
     public function initRelation(array $models, $relation)
@@ -31,7 +31,7 @@ class HasMany extends HasOneOrMany
         $dictionary = $this->buildDictionary($results);
 
         foreach($models as $model) {
-            if(isset($dictionary[$key = $model->{$this->parent->primaryKey}])) {
+            if(isset($dictionary[$key = $model->{$this->localKey}])) {
                 $model->setRelation(
                     $name,
                     $this->getRelationValue($dictionary, $key),

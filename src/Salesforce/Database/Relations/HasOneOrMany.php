@@ -2,15 +2,35 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
+use Stratease\Salesforcery\Salesforce\Database\Model;
 
 abstract class HasOneOrMany extends Relation
 {
 
+    /**
+     * @var string $foreignKey
+     */
+    protected $foreignKey;
+
+    /**
+     * @var string $localKey
+     */
+    protected $localKey;
+
+    public function __construct(Builder $builder, Model $parent, string $foreignKey, string $localKey)
+    {
+        $this->foreignKey = $foreignKey;
+        $this->localKey = $localKey;
+
+        parent::__construct($builder, $parent);
+    }
+
     public function addEagerConstraints(array $models): void
     {
         $this->builder->whereIn(
-            $this->foreignKey, $this->getKeys($models, $this->parent->primaryKey)
+            $this->foreignKey, $this->getKeys($models, $this->localKey)
         );
     }
 

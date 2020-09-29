@@ -11,7 +11,7 @@ class HasOne extends HasOneOrMany
 
     public function getResults()
     {
-        if(is_null($this->parent->primaryKey)) {
+        if(is_null($this->localKey)) {
             return;
         }
 
@@ -20,7 +20,7 @@ class HasOne extends HasOneOrMany
 
     public function addConstraints(): void
     {
-        $this->builder->where($this->foreignKey, $this->parent->{$this->parent->primaryKey});
+        $this->builder->where($this->foreignKey, $this->parent->{$this->localKey});
     }
 
     public function getEagerResults()
@@ -42,7 +42,7 @@ class HasOne extends HasOneOrMany
         $dictionary = $this->buildDictionary($results);
 
         foreach($models as $model) {
-            if(isset($dictionary[$key = $model->{$this->parent->primaryKey}])) {
+            if(isset($dictionary[$key = $model->{$this->localKey}])) {
                 $model->setRelation(
                     $name,
                     $this->getRelationValue($dictionary, $key),

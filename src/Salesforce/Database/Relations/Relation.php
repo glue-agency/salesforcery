@@ -22,20 +22,14 @@ abstract class Relation
     protected $parent;
 
     /**
-     * @var string $foreignKey
-     */
-    protected $foreignKey;
-
-    /**
      * @var Model
      */
     protected $related;
 
-    public function __construct(Builder $builder, Model $parent, string $foreignKey)
+    public function __construct(Builder $builder, Model $parent)
     {
         $this->builder = $builder;
         $this->parent = $parent;
-        $this->foreignKey = $foreignKey;
 
         $this->related = $builder->model;
 
