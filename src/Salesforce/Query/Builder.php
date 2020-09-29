@@ -25,11 +25,11 @@ class Builder
     public $grammar;
 
     /**
-     * The columns which the query is targeting.
+     * The fields which the query is targeting.
      *
      * @var array
      */
-    public $columns;
+    public $fields;
 
     /**
      * Parsed where statements, ready for normalization to query language
@@ -73,15 +73,15 @@ class Builder
     }
 
     /**
-     * Set the columns to be selected.
+     * Set the fields to be selected.
      *
-     * @param array|mixed $columns
+     * @param array $fields
      *
      * @return Builder
      */
-    public function select($columns = ['*']): self
+    public function select($fields = null): self
     {
-        $this->columns = is_array($columns) ? $columns : func_get_args();
+        $this->fields = is_array($fields) ? $fields : func_get_args();
 
         return $this;
     }
@@ -142,13 +142,13 @@ class Builder
     /**
      * Add a "where in" clause to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param array  $values
      * @param bool   $not
      *
      * @return Builder
      */
-    public function whereIn($column, $values, $not = false)
+    public function whereIn($field, $values, $not = false)
     {
         $type = $not ? 'NotIn' : 'In';
 
@@ -156,7 +156,7 @@ class Builder
             $values = $values->toArray();
         }
 
-        $this->wheres[] = compact('type', 'column', 'values');
+        $this->wheres[] = compact('type', 'field', 'values');
 
         return $this;
     }
@@ -164,28 +164,28 @@ class Builder
     /**
      * Add a "where not in" clause to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param mixed  $values
      *
      * @return Builder
      */
-    public function whereNotIn($column, $values)
+    public function whereNotIn($field, $values)
     {
-        return $this->whereIn($column, $values, true);
+        return $this->whereIn($field, $values, true);
     }
 
     /**
      * Add an "order by" clause to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param string $direction
      *
      * @return Builder
      */
-    public function orderBy($column, $direction = 'asc')
+    public function orderBy($field, $direction = 'asc')
     {
         $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
-            'column'    => $column,
+            'field'    => $field,
             'direction' => strtolower($direction) == 'asc' ? 'asc' : 'desc',
         ];
 
@@ -195,37 +195,54 @@ class Builder
     /**
      * Add a "where date" statement to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param string $operator
      * @param mixed  $value
      * @param string $boolean
      *
      * @return  \Stratease\Salesforcery\Salesforce\Database\Builder|static
      */
-    public function whereDate($column, $operator, $value = null, $boolean = 'and')
+    public function whereDate($field, $operator, $value = null, $boolean = 'and')
     {
         [$value, $operator] = $this->prepareValueAndOperator(
             $value, $operator, func_num_args() == 2
         );
 
-        return $this->addDateBasedWhere('Date', $column, $operator, $value, $boolean);
+        return $this->addDateBasedWhere('Date', $field, $operator, $value, $boolean);
     }
 
     /**
      * Add a where between statement to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param array  $values
      * @param string $boolean
      * @param bool   $not
      *
      * @return Builder
      */
-    public function whereBetween($column, array $values, $boolean = 'and', $not = false)
+    public function whereBetween($field, array $values, $boolean = 'and', $not = false)
     {
-        $type = 'between';
-        $this->wheres[] = compact('column', 'type', 'boolean', 'not');
+        $type = 'Between';
+        $this->wheres[] = compact('field', 'type', 'boolean', 'not');
         $this->addBinding($values, 'where');
+
+        return $this;
+    }
+
+    /**
+     * Add a boolean where statement to the query.
+     *
+     * @param string $field
+     * @param string $operator
+     * @param bool   $value
+     *
+     * @return Builder
+     */
+    public function whereBoolean($field, $operator, bool $value)
+    {
+        $type = 'Boolean';
+        $this->wheres[] = compact('type', 'field', 'operator', 'value');
 
         return $this;
     }
@@ -233,30 +250,15 @@ class Builder
     /**
      * Add a "where null" clause to the query.
      *
-     * @param string $column
+     * @param string $field
      * @param bool   $not
      *
      * @return Builder
      */
-    public function whereNull($column, $not = false)
+    public function whereNull($field, $not = false)
     {
         $type = $not ? 'NotNull' : 'Null';
-        $this->wheres[] = compact('type', 'column');
-
-        return $this;
-    }
-
-    /**
-     * Add a new select column to the query.
-     *
-     * @param array|mixed $column
-     *
-     * @return Builder
-     */
-    public function addSelect($column)
-    {
-        $column = is_array($column) ? $column : func_get_args();
-        $this->columns = array_merge((array) $this->columns, $column);
+        $this->wheres[] = compact('type', 'field');
 
         return $this;
     }

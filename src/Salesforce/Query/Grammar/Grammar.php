@@ -8,7 +8,7 @@ class Grammar
 {
 
     protected $selectComponents = [
-        'columns',
+        'fields',
         'from',
         'wheres',
         'limit',
@@ -27,11 +27,11 @@ class Grammar
         );
     }
 
-    protected function compileColumns(Builder $query, $columns): string
+    protected function compileFields(Builder $query, $fields): string
     {
-        $columnized = implode(', ', $columns);
+        $field_string = implode(', ', $fields);
 
-        return "SELECT {$columnized}";
+        return "SELECT {$field_string}";
     }
 
     protected function compileWheres(Builder $query, $wheres): string
@@ -70,7 +70,7 @@ class Grammar
     {
         $stringifiedValues = implode(', ', $this->wrap($where['values']));
 
-        return "{$where['column']} {$where['type']} ({$stringifiedValues})";
+        return "{$where['field']} {$where['type']} ({$stringifiedValues})";
     }
 
     protected function whereNotIn(Builder $query, $where): string
@@ -80,12 +80,12 @@ class Grammar
 
     protected function whereNull(Builder $query, $where): string
     {
-        return "{$where['column']} = NULL";
+        return "{$where['field']} = NULL";
     }
 
     protected function whereNotNull(Builder $query, $where): string
     {
-        return "{$where['column']} != NULL";
+        return "{$where['field']} != NULL";
     }
 
     protected function compileLimit(Builder $query, $limit): string
