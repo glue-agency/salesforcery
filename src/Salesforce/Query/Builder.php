@@ -104,6 +104,10 @@ class Builder
             [$operator, $value] = ['=', $operator];
         }
 
+        if(is_bool($value)) {
+            return $this->whereBoolean($field, $operator, $value);
+        }
+
         if(is_null($value)) {
             return $this->whereNull($field, $operator !== '=');
         }

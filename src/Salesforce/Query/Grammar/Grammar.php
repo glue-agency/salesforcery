@@ -59,6 +59,13 @@ class Grammar
         return "{$where['field']} {$where['operator']} {$this->wrap($where['value'])}";
     }
 
+    protected function whereBoolean(Builder $query, $where): string
+    {
+        $boolean = $where['value'] ? 'true' : 'false';
+
+        return "{$where['field']} {$where['operator']} {$boolean}";
+    }
+
     protected function whereIn(Builder $query, $where): string
     {
         $stringifiedValues = implode(', ', $this->wrap($where['values']));
