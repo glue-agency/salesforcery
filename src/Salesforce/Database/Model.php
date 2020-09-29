@@ -4,6 +4,7 @@ namespace Stratease\Salesforcery\Salesforce\Database;
 
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
 use Stratease\Salesforcery\Salesforce\Database\Concerns\HasRelations;
+use Stratease\Salesforcery\Salesforce\Exceptions\InvalidFieldException;
 
 abstract class Model
 {
@@ -333,9 +334,15 @@ abstract class Model
             return $this->getRelationValue($field);
         }
 
-        $getter = 'get' . $field;
+        if(self::isValidField($field)) {
+            return isset($this->attributes[$field]) ? $this->attributes[$field] : null;
+        }
 
-        return $this->$getter();
+        throw new InvalidFieldException(sprintf('The field %s does not exist on %s. Available fieds are: %s.',
+            $field,
+            self::resolveObjectName(),
+            implode(', ', array_keys(self::getSchema()))
+        ));
     }
 
     /**
@@ -346,21 +353,6 @@ abstract class Model
      */
     public function __call($name, $arguments)
     {
-        // getter?
-        if(substr($name, 0, 3) === 'get') {
-            $field = substr($name, 3);
-
-            if(self::isValidField($field)) {
-                return isset($this->attributes[$field]) ? $this->attributes[$field] : null;
-            }
-
-            trigger_error(sprintf("Invalid field: %s->%s being accessed. Available fields are: %s.",
-                self::resolveObjectName(),
-                $field,
-                implode(', ', array_keys(self::getSchema()))
-            ), E_USER_WARNING);
-        }
-
         // setter?
         if(substr($name, 0, 3) === 'set') {
             $field = substr($name, 3);
