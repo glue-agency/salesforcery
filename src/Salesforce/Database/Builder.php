@@ -136,6 +136,26 @@ class Builder
         return new Collection($results);
     }
 
+    public function getRaw() {
+        $response = $this->query->runSelect();
+
+        $records = $response['records'];
+
+        while (!$response['done']) {
+            $response = $this->query->connection->request(
+                'GET',
+                $this->query->connection->authentication->getInstanceUrl() . $response['nextRecordsUrl']
+            );
+            $response = json_decode($response->getBody(), true);
+            $records  = array_merge($records, $response['records']);
+        }
+
+        return array_map(function($record) {
+            unset($record['attributes']);
+            return $record;
+        }, $records);
+    }
+
     /**
      * Verify which of the different endpoints for Salesforce REST API
      *
@@ -250,7 +270,7 @@ class Builder
     public function getRelation($name): Relation
     {
         try {
-            $relation = $this->model->newInstance()->$name();
+            $relation = $this->model->newInstance()->{$name}();
             $relation->withoutDefaultConstraint();
 
             $nested = $this->relationsNestedUnder($name);
@@ -357,13 +377,13 @@ class Builder
     }
 
     /**
-     * Get a new instance of the query builder.
+     * Get a new instance of the builder.
      *
      * @return Builder
      */
-    public function newQuery()
+    public function newBuilder()
     {
-        return new static($this->query);
+        return new static($this->query->newQuery());
     }
 
     /**

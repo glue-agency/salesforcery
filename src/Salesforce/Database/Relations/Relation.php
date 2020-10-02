@@ -61,6 +61,19 @@ abstract class Relation
         return $this->builder;
     }
 
+    protected function getKeys(array $models, $key): array
+    {
+        $keys = [];
+
+        foreach($models as $model) {
+            $keys[] = $model->{$key};
+        }
+
+        $keys = array_unique($keys);
+
+        return $keys;
+    }
+
     public function __call($method, $parameters)
     {
         $result = $this->forwardCallTo($this->builder, $method, $parameters);

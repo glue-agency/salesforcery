@@ -63,19 +63,6 @@ class BelongsTo extends Relation
         );
     }
 
-    protected function getKeys(array $models, $key): array
-    {
-        $keys = [];
-
-        foreach($models as $model) {
-            $keys[] = $model->{$key};
-        }
-
-        $keys = array_unique($keys);
-
-        return $keys;
-    }
-
     public function initRelation(array $models, $relation)
     {
         foreach($models as $model) {

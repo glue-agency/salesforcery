@@ -2,6 +2,7 @@
 
 namespace Stratease\Salesforcery\Salesforce\Query;
 
+use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Facades\Log;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client as Connection;
@@ -87,6 +88,40 @@ class Builder
     }
 
     /**
+     * Add a new select column to the query.
+     *
+     * @param  array|mixed $field
+     *
+     * @return Builder
+     */
+    public function addSelect($field)
+    {
+        $fields = is_array($field) ? $field : func_get_args();
+
+        foreach ($fields as $field) {
+            if ($field instanceof Closure) {
+                $this->fields[] = $this->selectSub($field);
+            } else {
+                $this->fields[] = $field;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a subselect expression to the query.
+     *
+     * @param Closure $query
+     *
+     * @return string
+     */
+    protected function selectSub($query)
+    {
+        return "({$this->createSub($query)})";
+    }
+
+    /**
      * @param      $field
      * @param null $operator
      * @param null $value
@@ -106,6 +141,11 @@ class Builder
 
         if(is_bool($value)) {
             return $this->whereBoolean($field, $operator, $value);
+        }
+
+        // Preform a sub-select
+        if($value instanceof Closure) {
+            return $this->whereSub($field, $operator, $value);
         }
 
         if(is_null($value)) {
@@ -152,7 +192,12 @@ class Builder
     {
         $type = $not ? 'NotIn' : 'In';
 
-        if ($values instanceof Arrayable) {
+        if($values instanceof Closure) {
+            $values = $this->createSub($values);
+            $type = "{$type}Sub";
+        }
+
+        if($values instanceof Arrayable) {
             $values = $values->toArray();
         }
 
@@ -185,7 +230,7 @@ class Builder
     public function orderBy($field, $direction = 'asc')
     {
         $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
-            'field'    => $field,
+            'field'     => $field,
             'direction' => strtolower($direction) == 'asc' ? 'asc' : 'desc',
         ];
 
@@ -245,6 +290,49 @@ class Builder
         $this->wheres[] = compact('type', 'field', 'operator', 'value');
 
         return $this;
+    }
+
+    /**
+     * Add a full sub-select to the query.
+     *
+     * @param string  $field
+     * @param string  $operator
+     * @param Closure $callback
+     *
+     * @return Builder
+     */
+    protected function whereSub($field, $operator, Closure $callback)
+    {
+        $type = 'Sub';
+
+        // Once we have the query instance we can simply execute it so it can add all
+        // of the sub-select's conditions to itself, and then we can cache it off
+        // in the array of where clauses for the "main" parent query instance.
+        call_user_func($callback, $query = $this->newQuery());
+
+        $this->wheres[] = compact(
+            'type', 'field', 'operator', 'query'
+        );
+
+        return $this;
+    }
+
+    /**
+     * Creates a subquery and parse it.
+     *
+     * @param Closure|Builder $query
+     *
+     * @return string
+     */
+    protected function createSub($query)
+    {
+        if ($query instanceof Closure) {
+            $callback = $query;
+
+            $callback($query = $this->newQuery());
+        }
+
+        return $query->toSql();
     }
 
     /**
@@ -324,6 +412,16 @@ class Builder
         return $this->connection->{$method}(
             $this->toSql()
         );
+    }
+
+    /**
+     * Get a new instance of the query builder.
+     *
+     * @return Builder
+     */
+    public function newQuery()
+    {
+        return new static($this->connection, $this->grammar);
     }
 
     /**

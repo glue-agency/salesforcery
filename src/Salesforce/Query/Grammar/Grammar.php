@@ -78,6 +78,17 @@ class Grammar
         return $this->whereIn($query, $where);
     }
 
+    protected function whereInSub(Builder $query, $where): string
+    {
+        return "{$where['field']} IN ({$where['values']})";
+    }
+
+    protected function whereNotInSub(Builder $query, $where): string
+    {
+        return "{$where['field']} NOT IN ({$where['values']})";
+
+    }
+
     protected function whereNull(Builder $query, $where): string
     {
         return "{$where['field']} = NULL";
@@ -86,6 +97,13 @@ class Grammar
     protected function whereNotNull(Builder $query, $where): string
     {
         return "{$where['field']} != NULL";
+    }
+
+    protected function whereSub(Builder $query, $where)
+    {
+        $select = $this->compileSelect($where['query']);
+
+        return "{$where['field']} {$where['operator']} ({$select})";
     }
 
     protected function compileLimit(Builder $query, $limit): string
