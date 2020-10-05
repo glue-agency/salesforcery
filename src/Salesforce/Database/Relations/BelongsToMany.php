@@ -95,7 +95,7 @@ class BelongsToMany extends Relation
         // @todo find an implementation that does not require an extra query
         $this->loadPivot([$this->parent->{$this->parentKey}]);
 
-        $this->builder->where($this->parentKey, $this->getPivotKeys($this->relatedPivotKey)[0]);
+        $this->builder->whereIn($this->parentKey, $this->getPivotKeys($this->relatedPivotKey));
     }
 
     public function addEagerConstraints(array $models): void
@@ -132,11 +132,9 @@ class BelongsToMany extends Relation
 
     protected function buildDictionary(Collection $results)
     {
-        // First we will build a dictionary of child models keyed by the foreign key
-        // of the relation so that we will easily and quickly match them to their
-        // parents without having a possibly slow inner loops for every models.
         $dictionary = [];
 
+        // @todo improve this dictionary build
         foreach($results as $result) {
             foreach($this->pivot as $pivot) {
                 if($result->{$this->relatedKey} == $pivot[$this->relatedPivotKey]) {
