@@ -90,7 +90,7 @@ class Builder
     /**
      * Add a new select column to the query.
      *
-     * @param  array|mixed $field
+     * @param array|mixed $field
      *
      * @return Builder
      */
@@ -98,8 +98,8 @@ class Builder
     {
         $fields = is_array($field) ? $field : func_get_args();
 
-        foreach ($fields as $field) {
-            if ($field instanceof Closure) {
+        foreach($fields as $field) {
+            if($field instanceof Closure) {
                 $this->fields[] = $this->selectSub($field);
             } else {
                 $this->fields[] = $field;
@@ -326,7 +326,7 @@ class Builder
      */
     protected function createSub($query)
     {
-        if ($query instanceof Closure) {
+        if($query instanceof Closure) {
             $callback = $query;
 
             $callback($query = $this->newQuery());
@@ -352,11 +352,23 @@ class Builder
     }
 
     /**
+     * Alias to set the "limit" value of the query.
+     *
+     * @param int $value
+     *
+     * @return Builder
+     */
+    public function take($value): self
+    {
+        return $this->limit($value);
+    }
+
+    /**
      * Set the "limit" value of the query.
      *
      * @param $limit
      *
-     * @return $this
+     * @return Builder
      */
     public function limit($limit): self
     {
@@ -384,7 +396,7 @@ class Builder
      *
      * @return Builder
      */
-    public function offset($value)
+    public function offset($value): self
     {
         $this->offset = max(0, $value);
 

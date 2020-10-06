@@ -9,8 +9,10 @@
 namespace Stratease\Salesforcery\Salesforce\Database;
 
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Concerns\QueriesRelationships;
 use Illuminate\Database\Eloquent\RelationNotFoundException;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
@@ -154,6 +156,27 @@ class Builder
             unset($record['attributes']);
             return $record;
         }, $records);
+    }
+
+    public function paginate($size = 15, $page = null)
+    {
+        $page = $page ?: Paginator::resolveCurrentPage();
+
+        $this->skip(($page - 1) * $size)->take($size + 1);
+
+        return $this->paginator($this->get(), $size, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+        ]);
+    }
+
+    protected function paginator($items, $size, $page, $options)
+    {
+        return Container::getInstance()->makeWith(Paginator::class, [
+            'items'       => $items,
+            'perPage'     => $size,
+            'currentPage' => $page,
+            'options'     => $options,
+        ]);
     }
 
     /**
