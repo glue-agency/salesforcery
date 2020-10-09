@@ -2,6 +2,8 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Closure;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 
 class HasMany extends HasOneOrMany
@@ -40,5 +42,10 @@ class HasMany extends HasOneOrMany
         }
 
         return $models;
+    }
+
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
+    {
+        // TODO: Implement getRelationExistenceQuery() method.
     }
 }

@@ -2,9 +2,10 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Closure;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\Builder;
 
 class BelongsTo extends Relation
 {
@@ -87,5 +88,20 @@ class BelongsTo extends Relation
         }
 
         return $models;
+    }
+
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
+    {
+        $query = $relation->getRelated()->newQuery();
+
+        $query->select($parentBuilder->model->primaryKey);
+        $callback($query);
+
+        $parentBuilder->query->whereIn($relation->getForeignKey(), $query);
+    }
+
+    public function getForeignKey()
+    {
+        return $this->foreignKey;
     }
 }

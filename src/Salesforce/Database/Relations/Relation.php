@@ -2,13 +2,15 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Closure;
 use Illuminate\Support\Traits\ForwardsCalls;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-use Stratease\Salesforcery\Salesforce\Database\Builder;
 
 abstract class Relation
 {
+
     use ForwardsCalls;
 
     /**
@@ -51,6 +53,8 @@ abstract class Relation
 
     abstract public function match(array $models, Collection $results, $name);
 
+    abstract public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback);
+
     public function withoutDefaultConstraint(): void
     {
         unset($this->builder->query->wheres[0]);
@@ -74,6 +78,11 @@ abstract class Relation
         return $keys;
     }
 
+    public function getRelated(): Model
+    {
+        return $this->related;
+    }
+
     public function __call($method, $parameters)
     {
         $result = $this->forwardCallTo($this->builder, $method, $parameters);
@@ -84,5 +93,4 @@ abstract class Relation
 
         return $result;
     }
-
 }

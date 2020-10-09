@@ -2,6 +2,7 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Closure;
 use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
@@ -56,7 +57,7 @@ class BelongsToMany extends Relation
      *
      * @var array
      */
-    protected $pivot;
+    protected $pivot = [];
 
     /**
      * Create a new belongs to many relationship instance.
@@ -93,7 +94,7 @@ class BelongsToMany extends Relation
     public function addConstraints(): void
     {
         // @todo find an implementation that does not require an extra query
-        $this->loadPivot([$this->parent->{$this->parentKey}]);
+        // $this->loadPivot([$this->parent->{$this->parentKey}]);
 
         $this->builder->whereIn($this->parentKey, $this->getPivotKeys($this->relatedPivotKey));
     }
@@ -128,6 +129,11 @@ class BelongsToMany extends Relation
         }
 
         return $models;
+    }
+
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
+    {
+        // TODO: Implement getRelationExistenceQuery() method.
     }
 
     protected function buildDictionary(Collection $results)

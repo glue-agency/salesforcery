@@ -5,7 +5,9 @@ namespace Stratease\Salesforcery\Salesforce\Query;
 use Closure;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client as Connection;
+use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 use Stratease\Salesforcery\Salesforce\Query\Grammar\Grammar;
 
 class Builder
@@ -99,7 +101,7 @@ class Builder
         $fields = is_array($field) ? $field : func_get_args();
 
         foreach($fields as $field) {
-            if($field instanceof Closure) {
+            if($this->isQueryable($field)) {
                 $this->fields[] = $this->selectSub($field);
             } else {
                 $this->fields[] = $field;
@@ -139,12 +141,16 @@ class Builder
             [$operator, $value] = ['=', $operator];
         }
 
+        if ($this->isQueryable($field) && is_null($operator)) {
+            return $this->whereNested($field);
+        }
+
         if(is_bool($value)) {
             return $this->whereBoolean($field, $operator, $value);
         }
 
         // Preform a sub-select
-        if($value instanceof Closure) {
+        if($this->isQueryable($value)) {
             return $this->whereSub($field, $operator, $value);
         }
 
@@ -192,7 +198,7 @@ class Builder
     {
         $type = $not ? 'NotIn' : 'In';
 
-        if($values instanceof Closure) {
+        if($this->isQueryable($values)) {
             $values = $this->createSub($values);
             $type = "{$type}Sub";
         }
@@ -276,6 +282,19 @@ class Builder
     }
 
     /**
+     * Add a nested where statement to the query.
+     *
+     * @param  \Closure  $callback
+     * @return Builder
+     */
+    public function whereNested(Closure $callback)
+    {
+        call_user_func($callback, $query = $this->newQuery()->select($this->fields)->from($this->from));
+
+        return $this->addNestedWhereQuery($query);
+    }
+
+    /**
      * Add a boolean where statement to the query.
      *
      * @param string $field
@@ -318,6 +337,23 @@ class Builder
     }
 
     /**
+     * Add another query builder as a nested where to the query builder.
+     *
+     * @param  Builder  $query
+     * @return Builder
+     */
+    public function addNestedWhereQuery($query)
+    {
+        if (count($query->wheres)) {
+            $type = 'Nested';
+
+            $this->wheres[] = compact('type', 'query');
+        }
+
+        return $this;
+    }
+
+    /**
      * Creates a subquery and parse it.
      *
      * @param Closure|Builder $query
@@ -332,7 +368,28 @@ class Builder
             $callback($query = $this->newQuery());
         }
 
-        return $query->toSql();
+        return $this->parseSub($query);
+    }
+
+    /**
+     * Parse the subquery into SQL.
+     *
+     * @param  mixed  $query
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function parseSub($query)
+    {
+        if ($query instanceof self || $query instanceof \Stratease\Salesforcery\Salesforce\Database\Builder || $query instanceof Relation) {
+            return $query->toSql();
+        } elseif (is_string($query)) {
+            return $query;
+        } else {
+            throw new InvalidArgumentException(
+                'A subquery must be a query builder instance, a Closure, or a string.'
+            );
+        }
     }
 
     /**
@@ -434,6 +491,20 @@ class Builder
     public function newQuery()
     {
         return new static($this->connection, $this->grammar);
+    }
+
+    /**
+     * Determine if the value is a query builder instance or a Closure.
+     *
+     * @param  mixed  $value
+     *
+     * @return bool
+     */
+    protected function isQueryable($value)
+    {
+        return $value instanceof \Stratease\Salesforcery\Salesforce\Query\Builder ||
+            $value instanceof \Stratease\Salesforcery\Salesforce\Database\Builder ||
+            $value instanceof Closure;
     }
 
     /**

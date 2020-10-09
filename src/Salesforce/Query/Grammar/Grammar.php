@@ -34,9 +34,9 @@ class Grammar
         return "SELECT {$field_string}";
     }
 
-    protected function compileWheres(Builder $query, $wheres): string
+    protected function compileWheres(Builder $query): string
     {
-        if(empty($wheres)) {
+        if(is_null($query->wheres)) {
             return '';
         }
 
@@ -68,9 +68,14 @@ class Grammar
 
     protected function whereIn(Builder $query, $where): string
     {
-        $stringifiedValues = implode(', ', $this->wrap($where['values']));
+        if(! empty($where['values'])) {
+            $stringifiedValues = implode(', ', $this->wrap($where['values']));
 
-        return "{$where['field']} {$where['type']} ({$stringifiedValues})";
+            return "{$where['field']} {$where['type']} ({$stringifiedValues})";
+        }
+
+        // SOQL equivalent for 0 = 1
+        return 'Id = null';
     }
 
     protected function whereNotIn(Builder $query, $where): string
@@ -104,6 +109,11 @@ class Grammar
         $select = $this->compileSelect($where['query']);
 
         return "{$where['field']} {$where['operator']} ({$select})";
+    }
+
+    protected function whereNested(Builder $query, $where)
+    {
+        return '(' . substr($this->compileWheres($where['query']), 6) . ')';
     }
 
     protected function compileLimit(Builder $query, $limit): string

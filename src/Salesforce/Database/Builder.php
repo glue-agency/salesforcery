@@ -10,12 +10,12 @@ namespace Stratease\Salesforcery\Salesforce\Database;
 
 use Closure;
 use Illuminate\Container\Container;
-use Illuminate\Database\Eloquent\Concerns\QueriesRelationships;
 use Illuminate\Database\Eloquent\RelationNotFoundException;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
+use Stratease\Salesforcery\Salesforce\Database\Concerns\QueriesRelationships;
 use Stratease\Salesforcery\Salesforce\Database\Relations\Relation;
 use Stratease\Salesforcery\Salesforce\Query\Builder as QueryBuilder;
 
@@ -90,6 +90,18 @@ class Builder
     }
 
     /**
+     * Find a model by its primary key.
+     *
+     * @param  mixed  $id
+     *
+     * @return Model|Collection|null
+     */
+    public function find($id)
+    {
+        return $this->where($this->model->primaryKey, '=', $id)->first();
+    }
+
+    /**
      * Execute the query as a "select" statement with limit 1 and hydrate the model.
      *
      * @return Model
@@ -156,6 +168,13 @@ class Builder
             unset($record['attributes']);
             return $record;
         }, $records);
+    }
+
+    public function where($field, $operator = null, $value = null)
+    {
+        $this->query->where(...func_get_args());
+
+        return $this;
     }
 
     public function paginate($size = 15, $page = null)

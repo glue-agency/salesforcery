@@ -2,6 +2,8 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
+use Closure;
+use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Stratease\Salesforcery\Salesforce\Database\Collection;
 
 class HasOne extends HasOneOrMany
@@ -58,5 +60,10 @@ class HasOne extends HasOneOrMany
         $value = $dictionary[$key];
 
         return reset($value);
+    }
+
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
+    {
+        // TODO: Implement getRelationExistenceQuery() method.
     }
 }
