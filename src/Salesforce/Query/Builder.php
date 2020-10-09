@@ -235,9 +235,9 @@ class Builder
      */
     public function orderBy($field, $direction = 'asc')
     {
-        $this->{$this->unions ? 'unionOrders' : 'orders'}[] = [
+        $this->orders[] = [
             'field'     => $field,
-            'direction' => strtolower($direction) == 'asc' ? 'asc' : 'desc',
+            'direction' => strtolower($direction) == 'asc' ? 'ASC' : 'DESC',
         ];
 
         return $this;

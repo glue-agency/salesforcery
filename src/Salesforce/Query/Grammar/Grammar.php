@@ -11,6 +11,7 @@ class Grammar
         'fields',
         'from',
         'wheres',
+        'orders',
         'limit',
         'offset',
     ];
@@ -114,6 +115,23 @@ class Grammar
     protected function whereNested(Builder $query, $where)
     {
         return '(' . substr($this->compileWheres($where['query']), 6) . ')';
+    }
+
+    protected function compileOrders(Builder $query, $orders): string
+    {
+        if(! empty($orders)) {
+            $stringifiedOrders = implode(', ', $this->compileOrdersToArray($query, $orders));
+            return "ORDER BY {$stringifiedOrders}";
+        }
+
+        return '';
+    }
+
+    protected function compileOrdersToArray(Builder $query, $orders)
+    {
+        return array_map(function ($order) {
+            return "{$order['field']} {$order['direction']}";
+        }, $orders);
     }
 
     protected function compileLimit(Builder $query, $limit): string
