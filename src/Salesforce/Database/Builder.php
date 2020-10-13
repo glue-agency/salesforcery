@@ -177,6 +177,15 @@ class Builder
         return $this;
     }
 
+    public function when($value, $callback)
+    {
+        if ($value) {
+            return $callback($this, $value) ?: $this;
+        }
+
+        return $this;
+    }
+
     public function paginate($size = 15, $page = null)
     {
         $page = $page ?: Paginator::resolveCurrentPage();
