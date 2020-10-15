@@ -2,7 +2,9 @@
 
 namespace Stratease\Salesforcery\Salesforce\Query;
 
+use Carbon\Carbon;
 use Closure;
+use DateTime;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -145,6 +147,10 @@ class Builder
             return $this->whereNested($field);
         }
 
+        if($value instanceof Carbon || $value instanceof DateTime) {
+            return $this->whereDate($field, $operator, $value);
+        }
+
         if(is_bool($value)) {
             return $this->whereBoolean($field, $operator, $value);
         }
@@ -249,34 +255,15 @@ class Builder
      * @param string $field
      * @param string $operator
      * @param mixed  $value
-     * @param string $boolean
      *
      * @return  \Stratease\Salesforcery\Salesforce\Database\Builder|static
      */
-    public function whereDate($field, $operator, $value = null, $boolean = 'and')
+    public function whereDate($field, $operator, $value = null)
     {
-        [$value, $operator] = $this->prepareValueAndOperator(
-            $value, $operator, func_num_args() == 2
-        );
+        $type = 'Date';
+        $date = $this->parseDate($value);
 
-        return $this->addDateBasedWhere('Date', $field, $operator, $value, $boolean);
-    }
-
-    /**
-     * Add a where between statement to the query.
-     *
-     * @param string $field
-     * @param array  $values
-     * @param string $boolean
-     * @param bool   $not
-     *
-     * @return Builder
-     */
-    public function whereBetween($field, array $values, $boolean = 'and', $not = false)
-    {
-        $type = 'Between';
-        $this->wheres[] = compact('field', 'type', 'boolean', 'not');
-        $this->addBinding($values, 'where');
+        $this->wheres[] = compact('type', 'field', 'operator', 'date');
 
         return $this;
     }
@@ -390,6 +377,26 @@ class Builder
                 'A subquery must be a query builder instance, a Closure, or a string.'
             );
         }
+    }
+
+    /**
+     * Parse a date string or obejct into a Carbon object.
+     *
+     * @param  mixed  date
+     *
+     * @return Carbon
+     */
+    protected function parseDate($date): Carbon
+    {
+        if($date instanceof Carbon) {
+            return $date;
+        }
+
+        if( $date instanceof DateTime || is_string($date)) {
+            return Carbon::parse($date);
+        }
+
+        throw new InvalidArgumentException('A datequery must be a DateTime instance, Carbon instance, or a string.');
     }
 
     /**

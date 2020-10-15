@@ -67,6 +67,14 @@ class Grammar
         return "{$where['field']} {$where['operator']} {$boolean}";
     }
 
+    protected function whereDate(Builder $query, $where)
+    {
+        $format = $where['format'] ?? 'Y-m-d\TH:i:s.vO';
+        $date = $where['date']->format($format);
+
+        return "{$where['field']} {$where['operator']} {$date}";
+    }
+
     protected function whereIn(Builder $query, $where): string
     {
         if(! empty($where['values'])) {
@@ -92,7 +100,6 @@ class Grammar
     protected function whereNotInSub(Builder $query, $where): string
     {
         return "{$where['field']} NOT IN ({$where['values']})";
-
     }
 
     protected function whereNull(Builder $query, $where): string
@@ -121,6 +128,7 @@ class Grammar
     {
         if(! empty($orders)) {
             $stringifiedOrders = implode(', ', $this->compileOrdersToArray($query, $orders));
+
             return "ORDER BY {$stringifiedOrders}";
         }
 
@@ -129,7 +137,7 @@ class Grammar
 
     protected function compileOrdersToArray(Builder $query, $orders)
     {
-        return array_map(function ($order) {
+        return array_map(function($order) {
             return "{$order['field']} {$order['direction']}";
         }, $orders);
     }
