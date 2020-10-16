@@ -53,7 +53,17 @@ abstract class Relation
 
     abstract public function match(array $models, Collection $results, $name);
 
-    abstract public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback);
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback = null)
+    {
+        $query = $relation->getRelated()->newQuery();
+        $query->select($parentBuilder->model->primaryKey);
+
+        if($callback) {
+            $callback($query);
+        }
+
+        $parentBuilder->query->whereIn($relation->getParent()->primaryKey, $query);
+    }
 
     public function withoutDefaultConstraint(): void
     {
@@ -92,5 +102,10 @@ abstract class Relation
         }
 
         return $result;
+    }
+
+    public function getParent()
+    {
+        return $this->parent;
     }
 }

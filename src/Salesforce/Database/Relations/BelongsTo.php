@@ -90,12 +90,14 @@ class BelongsTo extends Relation
         return $models;
     }
 
-    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback = null)
     {
         $query = $relation->getRelated()->newQuery();
-
         $query->select($parentBuilder->model->primaryKey);
-        $callback($query);
+
+        if($callback) {
+            $callback($query);
+        }
 
         $parentBuilder->query->whereIn($relation->getForeignKey(), $query);
     }
@@ -103,5 +105,10 @@ class BelongsTo extends Relation
     public function getForeignKey()
     {
         return $this->foreignKey;
+    }
+
+    public function getOwnerKey()
+    {
+        return $this->ownerKey;
     }
 }

@@ -43,9 +43,4 @@ class HasMany extends HasOneOrMany
 
         return $models;
     }
-
-    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
-    {
-        // TODO: Implement getRelationExistenceQuery() method.
-    }
 }

@@ -61,9 +61,4 @@ class HasOne extends HasOneOrMany
 
         return reset($value);
     }
-
-    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback)
-    {
-        // TODO: Implement getRelationExistenceQuery() method.
-    }
 }

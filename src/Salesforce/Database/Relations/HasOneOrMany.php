@@ -47,6 +47,18 @@ abstract class HasOneOrMany extends Relation
         return $keys;
     }
 
+    public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, \Closure $callback = null)
+    {
+        $query = $relation->getRelated()->newQuery();
+        $query->select($this->foreignKey);
+
+        if($callback) {
+            $callback($query);
+        }
+
+        $parentBuilder->query->whereIn($this->localKey, $query);
+    }
+
     protected function buildDictionary(Collection $results)
     {
         $dictionary = [];
@@ -70,5 +82,15 @@ abstract class HasOneOrMany extends Relation
         $value = $dictionary[$key];
 
         return new Collection($value);
+    }
+
+    public function getForeignKey()
+    {
+        return $this->foreignKey;
+    }
+
+    public function getLocalKey()
+    {
+        return $this->localKey;
     }
 }
