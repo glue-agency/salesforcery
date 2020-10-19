@@ -41,7 +41,7 @@ class Builder
      * @var string[]
      */
     protected $passthrough = [
-        'toSql',
+        'count', 'toSql',
     ];
 
     /**

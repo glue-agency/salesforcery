@@ -481,6 +481,14 @@ class Builder
         return $this;
     }
 
+    public function count(): int
+    {
+        $this->select('COUNT()');
+        $results = $this->runSelect();
+
+        return (int) $results['totalSize'] ?? 0;
+    }
+
     public function runSelect($withTrashed = false)
     {
         $method = $withTrashed ? 'queryAll' : 'query';
