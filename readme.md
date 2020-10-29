@@ -1,23 +1,36 @@
-[![Latest Stable Version](https://poser.pugx.org/stratease/salesforcery/v/stable)](https://packagist.org/packages/stratease/salesforcery) [![Total Downloads](https://poser.pugx.org/stratease/salesforcery/downloads)](https://packagist.org/packages/stratease/salesforcery) [![License](https://poser.pugx.org/stratease/salesforcery/license)](https://packagist.org/packages/stratease/salesforcery)
-
 A PHP ORM for Salesforce client applications, utilizing an OAuth2 REST client. Inspired by [Eloquent's](https://laravel.com/docs/master/eloquent) simple API.
 
 # Setup
 
 ### 1. Setting up a Connected App
+
 You need to create a [Connected App](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_defining_remote_access_applications.htm) to generate the `client_id` and `client_secret` values for the OAuth2 connection. Once created use the credentials to register a connection.
 
 ### 2. Installation
+
+Add the following repository to your composer.json
+
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/glue-agency/salesforcery"
+    }
+],
+```
+
+Add the composer requirement
+
 ```bash
 composer require stratease/salesforcery
 ```
 
 ### 3. Connection
+
 ```php
 use Stratease\Salesforcery\Salesforce\Connection\REST\Authentication\PasswordAuthentication;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
 use Stratease\Salesforcery\Salesforce\Database\Model;
-
 
 $authentication = new PasswordAuthentication([
      'grant_type' => 'password',
