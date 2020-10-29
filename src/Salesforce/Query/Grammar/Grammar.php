@@ -69,7 +69,15 @@ class Grammar
 
     protected function whereDate(Builder $query, $where)
     {
-        $format = $where['format'] ?? 'Y-m-d\TH:i:s.vO';
+        $format = 'Y-m-d';
+        $date = $where['date']->format($format);
+
+        return "{$where['field']} {$where['operator']} {$date}";
+    }
+
+    protected function whereTimestamp(Builder $query, $where)
+    {
+        $format = 'Y-m-d\TH:i:s.vO';
         $date = $where['date']->format($format);
 
         return "{$where['field']} {$where['operator']} {$date}";

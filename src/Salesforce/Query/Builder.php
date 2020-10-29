@@ -148,7 +148,7 @@ class Builder
         }
 
         if($value instanceof Carbon || $value instanceof DateTime) {
-            return $this->whereDate($field, $operator, $value);
+            return $this->whereTimestamp($field, $operator, $value);
         }
 
         if(is_bool($value)) {
@@ -250,17 +250,32 @@ class Builder
     }
 
     /**
+     * Add a "where timestamp" statement to the query.
+     *
+     * @param string $field
+     * @param string $operator
+     * @param mixed  $value
+     * @param string $type
+     *
+     * @return  \Stratease\Salesforcery\Salesforce\Database\Builder|static
+     */
+    public function whereTimestamp($field, $operator, $value = null)
+    {
+        return $this->whereDate($field, $operator, $value, 'Timestamp');
+    }
+
+    /**
      * Add a "where date" statement to the query.
      *
      * @param string $field
      * @param string $operator
      * @param mixed  $value
+     * @param string $type
      *
      * @return  \Stratease\Salesforcery\Salesforce\Database\Builder|static
      */
-    public function whereDate($field, $operator, $value = null)
+    public function whereDate($field, $operator, $value = null, $type = 'Date')
     {
-        $type = 'Date';
         $date = $this->parseDate($value);
 
         $this->wheres[] = compact('type', 'field', 'operator', 'date');
