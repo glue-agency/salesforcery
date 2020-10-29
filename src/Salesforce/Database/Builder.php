@@ -12,6 +12,7 @@ use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\RelationNotFoundException;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;

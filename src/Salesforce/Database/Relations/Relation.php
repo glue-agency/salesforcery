@@ -5,7 +5,7 @@ namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 use Closure;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Stratease\Salesforcery\Salesforce\Database\Builder;
-use Stratease\Salesforcery\Salesforce\Database\Collection;
+use Illuminate\Support\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
 
 abstract class Relation
