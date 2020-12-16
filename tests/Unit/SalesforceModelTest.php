@@ -10,7 +10,7 @@ namespace Unit;
 use PHPUnit\Framework\TestCase;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Authentication\PasswordAuthentication;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
-use Stratease\Salesforcery\Salesforce\Database\Collection;
+use Illuminate\Support\Collection;
 use Stratease\Salesforcery\Salesforce\Database\Model;
 use Stratease\Salesforcery\Tests\Account;
 
