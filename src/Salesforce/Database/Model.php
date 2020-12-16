@@ -345,6 +345,11 @@ abstract class Model
         ));
     }
 
+    public function __isset($name)
+    {
+        return in_array($name, array_keys($this->attributes));
+    }
+
     /**
      * @param $name
      * @param $arguments
