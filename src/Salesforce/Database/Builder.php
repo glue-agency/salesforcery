@@ -187,6 +187,26 @@ class Builder
         return $this;
     }
 
+    public function fullPaginate($size = 200, $lastFieldValue = null)
+    {
+        $lastFieldValue = $lastFieldValue  ?: request()->get('previous_value');
+
+        if($lastFieldValue) {
+            $this->whereTimestamp('CreatedDate', '>', $lastFieldValue);
+        }
+
+        $this->orderBy('CreatedDate', 'desc');
+        $this->take($size + 1);
+
+        $results = $this->get();
+
+        return $this->paginator($results, $size, null, [
+            'path' => Paginator::resolveCurrentPath(),
+        ])->appends([
+            'previous_value' => optional($results->last())->CreatedDate
+        ]);
+    }
+
     public function paginate($size = 15, $page = null)
     {
         $page = $page ?: Paginator::resolveCurrentPage();
