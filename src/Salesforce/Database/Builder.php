@@ -195,16 +195,24 @@ class Builder
             $this->whereTimestamp('CreatedDate', '>', $lastFieldValue);
         }
 
-        $this->orderBy('CreatedDate', 'desc');
+        $this->orderBy('CreatedDate');
         $this->take($size + 1);
 
         $results = $this->get();
 
-        return $this->paginator($results, $size, null, [
+        $paginator = $this->paginator($results, $size, null, [
             'path' => Paginator::resolveCurrentPath(),
-        ])->appends([
+        ]);
+
+        $paginator->appends([
             'previous_value' => optional($results->last())->CreatedDate
         ]);
+
+        if($results->count() === $size) {
+            $paginator->hasMorePagesWhen(true);
+        }
+
+        return $paginator;
     }
 
     public function paginate($size = 15, $page = null)
