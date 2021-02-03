@@ -2,14 +2,11 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database\Relations;
 
-use Closure;
-use Stratease\Salesforcery\Salesforce\Database\Builder;
 use Illuminate\Support\Collection;
+use Stratease\Salesforcery\Salesforce\Database\Model;
 
 class HasOne extends HasOneOrMany
 {
-
-    // !! THIS IS STILL A WIP !!
 
     public function getResults()
     {
@@ -33,7 +30,7 @@ class HasOne extends HasOneOrMany
     public function initRelation(array $models, $relation)
     {
         foreach($models as $model) {
-            $model->setRelation($relation, new $model);
+            $model->setRelation($relation, null);
         }
 
         return $models;
