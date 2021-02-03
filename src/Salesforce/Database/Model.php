@@ -2,11 +2,14 @@
 
 namespace Stratease\Salesforcery\Salesforce\Database;
 
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use JsonSerializable;
 use Stratease\Salesforcery\Salesforce\Connection\REST\Client;
 use Stratease\Salesforcery\Salesforce\Database\Concerns\HasRelations;
 use Stratease\Salesforcery\Salesforce\Exceptions\InvalidFieldException;
 
-abstract class Model
+abstract class Model implements Arrayable, Jsonable, JsonSerializable
 {
 
     use HasRelations;
@@ -43,7 +46,6 @@ abstract class Model
      */
     public function __construct($data = [])
     {
-        //@todo init schema inspector
         $this->hydrate($data);
     }
 
@@ -266,7 +268,49 @@ abstract class Model
      */
     public function toArray()
     {
+        return array_merge($this->attributesToArray(), $this->relationsToArray());
+    }
+
+    public function attributesToArray()
+    {
         return $this->attributes;
+    }
+
+    public function relationsToArray()
+    {
+        $attributes = [];
+
+        foreach($this->relations as $name => $value) {
+            if ($value instanceof Arrayable) {
+                $relation = $value->toArray();
+            }
+            elseif (is_null($value)) {
+                $relation = $value;
+            }
+
+            if (isset($relation) || is_null($value)) {
+                $attributes[$name] = $relation;
+            }
+
+            unset($relation);
+        }
+
+        return $attributes;
+    }
+
+    public function toJson($options = 0)
+    {
+        return json_encode($this->jsonSerialize(), $options);
+    }
+
+    /**
+     * Convert the object into something JSON serializable.
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
     /**
