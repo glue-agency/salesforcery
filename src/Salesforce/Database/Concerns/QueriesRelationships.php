@@ -18,7 +18,7 @@ trait QueriesRelationships
         return $this;
     }
 
-    public function whereHas($relation, Closure $callback)
+    public function whereHas($relation, Closure $callback = null)
     {
         return $this->has($relation, $callback);
     }
