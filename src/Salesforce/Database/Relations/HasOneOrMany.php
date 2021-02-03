@@ -49,7 +49,7 @@ abstract class HasOneOrMany extends Relation
 
     public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, \Closure $callback = null)
     {
-        $query = $relation->getRelated()->newQuery();
+        $query = $relation->getQueryBuilder();
         $query->select($this->foreignKey);
 
         if($callback) {

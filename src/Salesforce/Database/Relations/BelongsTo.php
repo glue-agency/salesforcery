@@ -92,7 +92,7 @@ class BelongsTo extends Relation
 
     public function getRelationExistenceQuery(Relation $relation, Builder $parentBuilder, Closure $callback = null)
     {
-        $query = $relation->getRelated()->newQuery();
+        $query = $relation->getQueryBuilder();
         $query->select($parentBuilder->model->primaryKey);
 
         if($callback) {
